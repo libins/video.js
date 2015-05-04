@@ -1,57 +1,58 @@
 // Fake a media playback tech controller so that player tests
 // can run without HTML5 or Flash, of which PhantomJS supports neither.
 
-import Tech from '../../src/js/tech/tech.js';
+import MediaTechController from '../../src/js/media/media.js';
 import * as Lib from '../../src/js/lib.js';
 import Component from '../../src/js/component.js';
 
 /**
  * @constructor
  */
-class MediaFaker extends Tech {
+var MediaFaker = MediaTechController.extend({
+  init: function(player, options, onReady){
+    MediaTechController.call(this, player, options, onReady);
 
-  constructor(player, options, onReady){
-    super(player, options, onReady);
     this.triggerReady();
   }
+});
 
-  createEl() {
-    var el = super.createEl('div', {
-      className: 'vjs-tech'
-    });
+// Support everything except for "video/unsupported-format"
+MediaFaker.isSupported = function(){ return true; };
+MediaFaker.canPlaySource = function(srcObj){ return srcObj.type !== 'video/unsupported-format'; };
 
-    if (this.player().poster()) {
-      // transfer the poster image to mimic HTML
-      el.poster = this.player().poster();
-    }
-
-    Lib.insertFirst(el, this.player_.el());
-
-    return el;
+MediaFaker.prototype.createEl = function(){
+  var el = MediaTechController.prototype.createEl.call(this, 'div', {
+    className: 'vjs-tech'
+  });
+  if (this.player().poster()) {
+    // transfer the poster image to mimic HTML
+    el.poster = this.player().poster();
   }
 
-  // fake a poster attribute to mimic the video element
-  poster() { return this.el().poster; }
-  setPoster(val) { this.el().poster = val; }
+  Lib.insertFirst(el, this.player_.el());
 
-  currentTime() { return 0; }
-  seeking() { return false; }
-  src() { return 'movie.mp4'; }
-  volume() { return 0; }
-  muted() { return false; }
-  pause() { return false; }
-  paused() { return true; }
-  play() { this.player().trigger('play'); }
-  supportsFullScreen() { return false; }
-  buffered() { return {}; }
-  duration() { return {}; }
-  networkState() { return 0; }
-  readyState() { return 0; }
+  return el;
+};
 
-  // Support everything except for "video/unsupported-format"
-  static isSupported() { return true; }
-  static canPlaySource(srcObj) { return srcObj.type !== 'video/unsupported-format'; }
-}
+// fake a poster attribute to mimic the video element
+MediaFaker.prototype.poster = function(){ return this.el().poster; };
+MediaFaker.prototype['setPoster'] = function(val){ this.el().poster = val; };
+
+MediaFaker.prototype.currentTime = function(){ return 0; };
+MediaFaker.prototype.seeking = function(){ return false; };
+MediaFaker.prototype.src = function(){ return 'movie.mp4'; };
+MediaFaker.prototype.volume = function(){ return 0; };
+MediaFaker.prototype.muted = function(){ return false; };
+MediaFaker.prototype.pause = function(){ return false; };
+MediaFaker.prototype.paused = function(){ return true; };
+MediaFaker.prototype.play = function() {
+  this.player().trigger('play');
+};
+MediaFaker.prototype.supportsFullScreen = function(){ return false; };
+MediaFaker.prototype.buffered = function(){ return {}; };
+MediaFaker.prototype.duration = function(){ return {}; };
+MediaFaker.prototype.networkState = function(){ return 0; };
+MediaFaker.prototype.readyState = function(){ return 0; };
 
 Component.registerComponent('MediaFaker', MediaFaker);
 module.exports = MediaFaker;

@@ -1,22 +1,15 @@
-import Component from '../component.js';
-import * as Lib from '../lib.js';
+import Component from '../component';
+import * as Lib from '../lib';
 
-// Required children
-import PlayToggle from './play-toggle.js';
-import CurrentTimeDisplay from './current-time-display.js';
-import DurationDisplay from './duration-display.js';
-import TimeDivider from './time-divider.js';
-import RemainingTimeDisplay from './remaining-time-display.js';
-import LiveDisplay from './live-display.js';
-import ProgressControl from './progress-control/progress-control.js';
-import FullscreenToggle from './fullscreen-toggle.js';
-import VolumeControl from './volume-control/volume-control.js';
-import VolumeMenuButton from './volume-menu-button.js';
-import MuteToggle from './mute-toggle.js';
-import ChaptersButton from './text-track-controls/chapters-button.js';
-import SubtitlesButton from './text-track-controls/subtitles-button.js';
-import CaptionsButton from './text-track-controls/captions-button.js';
-import PlaybackRateMenuButton from './playback-rate-menu/playback-rate-menu-button.js';
+import PlayToggle from './play-toggle';
+import CurrentTimeDisplay from './time-display';
+import LiveDisplay from './live-display';
+import ProgressControl from './progress-control';
+import FullscreenToggle from './fullscreen-toggle';
+import VolumeControl from './volume-control';
+import VolumeMenuButton from './volume-menu-button';
+import MuteToggle from './mute-toggle';
+import PlaybackRateMenuButton from './playback-rate-menu-button';
 
 /**
  * Container of main controls
@@ -26,13 +19,9 @@ import PlaybackRateMenuButton from './playback-rate-menu/playback-rate-menu-butt
  * @constructor
  * @extends vjs.Component
  */
-class ControlBar extends Component {
-  createEl() {
-    return Lib.createEl('div', {
-      className: 'vjs-control-bar'
-    });
-  }
-}
+var ControlBar = Component.extend();
+
+Component.registerComponent('ControlBar', ControlBar);
 
 ControlBar.prototype.options_ = {
   loadEvent: 'play',
@@ -55,5 +44,8 @@ ControlBar.prototype.options_ = {
   }
 };
 
-Component.registerComponent('ControlBar', ControlBar);
-export default ControlBar;
+ControlBar.prototype.createEl = function(){
+  return Lib.createEl('div', {
+    className: 'vjs-control-bar'
+  });
+};

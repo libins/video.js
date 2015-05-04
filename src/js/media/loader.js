@@ -8,10 +8,10 @@ import window from 'global/window';
  *
  * @constructor
  */
-class MediaLoader extends Component {
-
-  constructor(player, options, ready){
-    super(player, options, ready);
+let MediaLoader = Component.extend({
+  /** @constructor */
+  init: function(player, options, ready){
+    Component.call(this, player, options, ready);
 
     // If there are no sources when the player is initialized,
     // load the first supported playback technology.
@@ -34,7 +34,8 @@ class MediaLoader extends Component {
       player.src(player.options_['sources']);
     }
   }
-}
+});
 
 Component.registerComponent('MediaLoader', MediaLoader);
+
 export default MediaLoader;

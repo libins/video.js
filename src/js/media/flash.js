@@ -4,7 +4,7 @@
  * Not using setupTriggers. Using global onEvent func to distribute events
  */
 
-import Tech from './tech';
+import MediaTechController from './media';
 import * as Lib from '../lib';
 import FlashRtmpDecorator from './flash-rtmp';
 import Component from '../component';
@@ -19,10 +19,10 @@ let navigator = window.navigator;
  * @param {Function=} ready
  * @constructor
  */
-class Flash extends Tech {
-
-  constructor(player, options, ready){
-    super(player, options, ready);
+var Flash = MediaTechController.extend({
+  /** @constructor */
+  init: function(player, options, ready){
+    MediaTechController.call(this, player, options, ready);
 
     let { source, parentEl } = options;
 
@@ -103,85 +103,89 @@ class Flash extends Tech {
 
     this.el_ = Flash.embed(options['swf'], placeHolder, flashVars, params, attributes);
   }
+});
 
-  play() {
-    this.el_.vjs_play();
+Component.registerComponent('Flash', Flash);
+
+Flash.prototype.dispose = function(){
+  MediaTechController.prototype.dispose.call(this);
+};
+
+Flash.prototype.play = function(){
+  this.el_.vjs_play();
+};
+
+Flash.prototype.pause = function(){
+  this.el_.vjs_pause();
+};
+
+Flash.prototype.src = function(src){
+  if (src === undefined) {
+    return this['currentSrc']();
   }
 
-  pause() {
-    this.el_.vjs_pause();
+  // Setting src through `src` not `setSrc` will be deprecated
+  return this.setSrc(src);
+};
+
+Flash.prototype.setSrc = function(src){
+  // Make sure source URL is absolute.
+  src = Lib.getAbsoluteURL(src);
+  this.el_.vjs_src(src);
+
+  // Currently the SWF doesn't autoplay if you load a source later.
+  // e.g. Load player w/ no source, wait 2s, set src.
+  if (this.player_.autoplay()) {
+    var tech = this;
+    this.setTimeout(function(){ tech.play(); }, 0);
   }
+};
 
-  src(src) {
-    if (src === undefined) {
-      return this['currentSrc']();
-    }
+Flash.prototype['setCurrentTime'] = function(time){
+  this.lastSeekTarget_ = time;
+  this.el_.vjs_setProperty('currentTime', time);
+  MediaTechController.prototype.setCurrentTime.call(this);
+};
 
-    // Setting src through `src` not `setSrc` will be deprecated
-    return this.setSrc(src);
+Flash.prototype['currentTime'] = function(time){
+  // when seeking make the reported time keep up with the requested time
+  // by reading the time we're seeking to
+  if (this.seeking()) {
+    return this.lastSeekTarget_ || 0;
   }
+  return this.el_.vjs_getProperty('currentTime');
+};
 
-  setSrc(src) {
-    // Make sure source URL is absolute.
-    src = Lib.getAbsoluteURL(src);
-    this.el_.vjs_src(src);
-
-    // Currently the SWF doesn't autoplay if you load a source later.
-    // e.g. Load player w/ no source, wait 2s, set src.
-    if (this.player_.autoplay()) {
-      var tech = this;
-      this.setTimeout(function(){ tech.play(); }, 0);
-    }
+Flash.prototype['currentSrc'] = function(){
+  if (this.currentSource_) {
+    return this.currentSource_.src;
+  } else {
+    return this.el_.vjs_getProperty('currentSrc');
   }
+};
 
-  setCurrentTime(time) {
-    this.lastSeekTarget_ = time;
-    this.el_.vjs_setProperty('currentTime', time);
-    super.setCurrentTime();
-  }
+Flash.prototype.load = function(){
+  this.el_.vjs_load();
+};
 
-  currentTime(time) {
-    // when seeking make the reported time keep up with the requested time
-    // by reading the time we're seeking to
-    if (this.seeking()) {
-      return this.lastSeekTarget_ || 0;
-    }
-    return this.el_.vjs_getProperty('currentTime');
-  }
-
-  currentSrc() {
-    if (this.currentSource_) {
-      return this.currentSource_.src;
-    } else {
-      return this.el_.vjs_getProperty('currentSrc');
-    }
-  }
-
-  load() {
-    this.el_.vjs_load();
-  }
-
-  poster() {
-    this.el_.vjs_getProperty('poster');
-  }
-
+Flash.prototype.poster = function(){
+  this.el_.vjs_getProperty('poster');
+};
+Flash.prototype['setPoster'] = function(){
   // poster images are not handled by the Flash tech so make this a no-op
-  setPoster() {}
+};
 
-  buffered() {
-    return Lib.createTimeRange(0, this.el_.vjs_getProperty('buffered'));
-  }
+Flash.prototype.buffered = function(){
+  return Lib.createTimeRange(0, this.el_.vjs_getProperty('buffered'));
+};
 
-  supportsFullScreen() {
-    return false; // Flash does not allow fullscreen through javascript
-  }
+Flash.prototype.supportsFullScreen = function(){
+  return false; // Flash does not allow fullscreen through javascript
+};
 
-  enterFullScreen() {
-    return false;
-  }
-
-}
-
+Flash.prototype.enterFullScreen = function(){
+  return false;
+};
 
 // Create setters and getters for attributes
 const _api = Flash.prototype;
@@ -215,7 +219,7 @@ Flash.isSupported = function(){
 };
 
 // Add Source Handler pattern functions to this tech
-Tech.withSourceHandlers(Flash);
+MediaTechController.withSourceHandlers(Flash);
 
 /**
  * The default native source handler.
@@ -417,5 +421,4 @@ Flash.getEmbedCode = function(swf, flashVars, params, attributes){
 // Run Flash through the RTMP decorator
 FlashRtmpDecorator(Flash);
 
-Tech.registerComponent('Flash', Flash);
 export default Flash;
